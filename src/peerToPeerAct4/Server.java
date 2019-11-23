@@ -18,7 +18,7 @@
  * 
  * */
 
-package peerToPeerAct1;
+package peerToPeerAct4;
 
 import java.io.*;
 import java.net.*;
@@ -39,7 +39,7 @@ public class Server extends Thread{
 				Socket clientSocket = serverSocket.accept();//Création d'une socket côté client
 				SocketAddress AdresseIPClient = clientSocket.getRemoteSocketAddress();//recuperer l'adresse du client 
 				
-				new Process(clientSocket, AdresseIPClient).start();//Pour chaque client connecté au serveur, une instance de classe Process est évoquée
+				new ProcessServer(clientSocket, AdresseIPClient).start();//Pour chaque client connecté au serveur, une instance de classe Process est évoquée
 			}	
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -18,7 +18,7 @@
  * Remarques : Lire le ReadMe.pdf inclus dans le zip
  * 
  * */
-package peerToPeerAct1;
+package peerToPeerAct4;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

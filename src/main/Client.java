@@ -1,9 +1,7 @@
-package peerToPeerAct4;
-
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 1
+ * Titre du TP :		Gestionnaire d'annonces Version 2
  * 
- * Date : 				31/10/2019
+ * Date : 				23/11/2019
  * 
  * Nom : 				AGHARMIOU
  * Prénom :				Tanina
@@ -15,9 +13,10 @@ package peerToPeerAct4;
  * Numéro étudiant : 	21967736
  * email : 				nassilahamouche@gmail.com
  * 
- * Remarques : Lire le ReadMe.pdf inclus dans le zip
  * 
  * */
+package main;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,15 +27,20 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import com.serverCl.ServeurClient;
+import communic.serverCl.ServerClient;
+
+/*
+ * Cette classe est notre classe Client
+ * Celui-ci peut intéragir avec le gestionnaire d'annonces en console interne
+ * ou bien communiquer avec d'autres clients via une console externe dédiée à l'échange de messages
+ * 
+ */
 
 public class Client {
-	private Object frame;
 
-	// public static int idc = 0;
 	public Client() {
 		try {// 192.168.43.196
-				// 192.168.43.62
+
 			Socket socket = new Socket("127.0.0.1", 1229);
 
 			// Pour lire les messages du serveur
@@ -50,7 +54,7 @@ public class Client {
 
 			// line est une variable qui sert à recuperer la saisie du client en console
 			String line = "";
-			Scanner scanner = new Scanner(System.in);
+			final Scanner scanner = new Scanner(System.in);
 			boolean close = false;
 
 			String connexionSucces = "";// Pour la verification de la validité des identifiants
@@ -64,21 +68,21 @@ public class Client {
 				line = scanner.nextLine();// récupère la saisie du user
 				pw.println(line);// envoie la demande de connexion au serveur
 
-				String cs = buffRead.readLine();
+				String msgSuccess = buffRead.readLine();
 
-				connexionSucces = cs.substring(0, 9);// le message envoyé par le serveur
+				connexionSucces = msgSuccess.substring(0, 9);// le message envoyé par le serveur
 
-				System.err.println("\n" + cs + "\n");
+				System.err.println("\n" + msgSuccess + "\n");
 				if (connexionSucces.equals("CONNECTED") || connexionSucces.equals("CONFIRMED")) {// Si le client est
-					String[] tab = cs.split("\\:");
-					int Port = Integer.parseInt(tab[1]);// connecté, la
+																									// connecté
+					String[] splitSuccess = msgSuccess.split("\\:");// on destructure le message reçu
+					int Port = Integer.parseInt(splitSuccess[1]);// pour récupérer le port
 
-					ServeurClient window = new ServeurClient(Port);
+					ServerClient window = new ServerClient(Port);// on appelle la classe ServerClient pour ouvrir
+																	// l'interface de conversation
 					window.frame.setVisible(true);
 					window.start();
 
-					// new ProcessClient(Port).start(); // while de validité
-					// est terminée
 					break;
 				}
 
@@ -87,58 +91,55 @@ public class Client {
 			// Affichage du menu d'accueil
 			System.out.println("\n***** Menu ***** \n");
 			System.out.println("Display toutes les annonces : GETANNONCES");
-			System.out.println("Display mes annonces : 		GETMYANNONCES");
+			System.out.println("Display mes annonces : 		  GETMYANNONCES");
 			System.out.println("Poster une annonce :          NEWANNONCE/nom/domaine/prix/descriptif");
 			System.out.println("Update une annonce :          UPDATEANNONCE/n°/nom/domaine/prix/descriptif");
 			System.out.println("Delete une annonce :          DELETEANNONCE/n°");
+			System.out.println("Infos sur une annonce :       INFO/n°");
+			System.out.println("Contact un client:         	  CONTACT");
 			System.out.println("Quitter :                     EXIT\n");
 
 			System.out.println("Choisissez une operation dans le menu.\n");
 
 			String[] choix = { "GETANNONCES", "GETMYANNONCES", "NEWANNONCE", "UPDATEANNONCE", "DELETEANNONCE", "INFO" };
 
-			// while (!socket.isClosed()) {
 			line = "";
 			while (!line.equals("EXIT") && !socket.isClosed() && !close) {
 
 				System.out.print("[CLIENT] : ");
 				line = scanner.nextLine();
-				// System.out.println("ecrit ====== "+line);
+
 				req = line.split("/");
+				@SuppressWarnings("unused")
 				int Port = 0;
-				String[] tab = null;
-				String[] x = null;
-				String[] y = null;
+				String[] splitRepSever = null;
+				String[] splitRep = null;
 				String linec = "";
-				boolean ok = false;
-				int p = 0;
-				// do {
 
 				pw.println(line);
 
 				if (Arrays.asList(choix).contains(req[0].toUpperCase())) {
 					System.out.println(req[0]);
 
-//						System.out.println("OK ========"+ok);
+					String repServer = buffRead.readLine();
+					System.out.println(repServer);
+					splitRepSever = repServer.split("/");
 
-					String a = buffRead.readLine();
-					System.out.println(a);
-					x = a.split("/");
+					if (splitRepSever[0].equals("CONFIRM")) {
 
-					if (x[0].equals("CONFIRM")) {
-						Port = Integer.parseInt(x[3]);
+						Port = Integer.parseInt(splitRepSever[3]);
 						System.out.print("[CLIENT] : ");
 						linec = scanner.nextLine();
-						y = linec.split("/");
+						splitRep = linec.split("/");
 
-						if (y[0].toUpperCase().equals("CONTACT")) { //
-							System.out.println("in contact"); // tab = buffRead.readLine().split("/");
+						if (splitRep[0].toUpperCase().equals("CONTACT")) {
+							System.out.println("in contact");
 
-							// new ContactClient(x[2], x[3]).start();
-							com.client.ClientClient window = new com.client.ClientClient(x[2], x[3]);
+							// on ouvre une interface d'échange de messages
+							communic.client.ClientClient window = new communic.client.ClientClient(splitRepSever[2],
+									splitRepSever[3]);
 							window.frame.setVisible(true);
 							window.start();
-
 						}
 
 					}
@@ -149,7 +150,9 @@ public class Client {
 					if (req[0].toUpperCase().equals("EXIT")) {
 						System.out.println(buffRead.readLine());
 						close = true;
+						scanner.close();
 						socket.close();
+
 					}
 
 					if (!close) {
@@ -157,16 +160,13 @@ public class Client {
 						line = scanner.nextLine();
 						req = line.split("/");
 					} else {
-						scanner.close();
-						socket.close();
+						System.exit(0);
 						break;
 					}
 
 				}
 
-				// } while (!close);
 			}
-			socket.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -174,6 +174,7 @@ public class Client {
 
 	}
 
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		Client c = new Client();
 	}

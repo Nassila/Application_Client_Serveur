@@ -1,23 +1,21 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 1
+ * Titre du TP :		Gestionnaire d'annonces Version 2
  * 
- * Date : 				31/10/2019
+ * Date : 				23/11/2019
  * 
  * Nom : 				AGHARMIOU
  * Prénom :				Tanina
  * Numéro étudiant : 	21961776
  * email : 				20185597@etud.univ-evry.fr
- * 
+ *  
  * Nom : 				HAMOUCHE
  * Prénom :				Nassila
  * Numéro étudiant : 	21967736
  * email : 				nassilahamouche@gmail.com
- *  
  * 
- * Remarques : Lire le ReadMe.pdf inclus dans le zip
  * 
  * */
-package peerToPeerAct4;
+package communic;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,23 +27,29 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
 
-class ProcessServer extends Thread {
+import environnement.Outils;
+import main.Server;
 
-	private Socket socketClient;
+/*
+ * Cette classe permet la gestion de plusieurs clients pour le gestionnaire d'annonces.
+ * Avec utilisation des threads
+ */
+public class ProcessServer extends Thread {
+
+	public Socket socketClient;
 	SocketAddress AdresseIPClient;
 	int id = 0;
 	String[] info = null;
-	// Object[] infosClient = null;
-	List<String> infosClient = Server.infosClient;
+	List<String> infosClient = Server.infosClient;// récupère les infos sur les clients connectés
 
 	public ProcessServer(Socket socket, SocketAddress AdresseIP) {// Constrcuteur de la classe Process qui prend en
-																	// argument
-		// une socket cliente
+																	// argument une socket cliente
 		super();
 		this.socketClient = socket;// Récupération de la socket cliente
 		this.AdresseIPClient = AdresseIP;// recuperer l'adresse du client connecté
 	}
 
+	@SuppressWarnings("unlikely-arg-type")
 	public void run() {
 
 		try {
@@ -71,7 +75,7 @@ class ProcessServer extends Thread {
 			// Initialisation des variables
 			String request = "";
 
-			String[] t = null;
+			String[] splitCnxSucs = null;
 			String connexionSuccess = "";// Etat de la connexion avec la base de données
 			String[] demandeConnexion = buffRead.readLine().split("/");
 			String cs = "";
@@ -86,29 +90,27 @@ class ProcessServer extends Thread {
 					cs = connexionSuccess.substring(0, 9);
 
 					if (cs.equals("CONNECTED")) {
-						t = connexionSuccess.split("-");
+						splitCnxSucs = connexionSuccess.split("-");
 						try {
-							id = Integer.parseInt(t[1]);// id int
+							id = Integer.parseInt(splitCnxSucs[1]);// id int
 
 							info = AdresseIPClient.toString().split(":");
 							numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
 							while (true) {
 								if (!infosClient.contains(numRandomPort)) {
-									// infosClient.add(info[0]+"/"+info[1]+"/"+id);
-									infosClient.add(info[0]);
-									infosClient.add("" + numRandomPort);
-									infosClient.add(t[1]);
-									// printWrite.println(infosClient);
+									infosClient.add(info[0]);// ajout de l'IP
+									infosClient.add("" + numRandomPort);// ajout du port
+									infosClient.add(splitCnxSucs[1]);// ajout de l'id du client
+
 									break;
-								} else {
+								} else {// génération d'un port aléatoire
 									numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
 								}
 
 							}
-							printWrite.println(t[0] + ":" + numRandomPort);
+							printWrite.println(splitCnxSucs[0] + ":" + numRandomPort);
 
 						} catch (NumberFormatException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					} else {
@@ -127,20 +129,19 @@ class ProcessServer extends Thread {
 					cs = connexionSuccess.substring(0, 9);
 
 					if (cs.equals("CONFIRMED")) {
-						t = connexionSuccess.split("-");
+						splitCnxSucs = connexionSuccess.split("-");
 
 						try {
-							id = Integer.parseInt(t[1]);// id int
-							printWrite.println(t[0]);
+							id = Integer.parseInt(splitCnxSucs[1]);// id int
+							printWrite.println(splitCnxSucs[0]);
 							info = AdresseIPClient.toString().split(":");
 
 							while (true) {
 								if (!infosClient.contains(numRandomPort)) {
-									// infosClient.add(info[0]+"/"+info[1]+"/"+id);
 									infosClient.add(info[0]);
 									infosClient.add("" + numRandomPort);
-									infosClient.add(t[1]);
-									// printWrite.println(infosClient);
+									infosClient.add(splitCnxSucs[1]);
+
 									break;
 								} else {
 									numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
@@ -169,23 +170,21 @@ class ProcessServer extends Thread {
 
 				switch (demande[0].toUpperCase()) {// Traitement la requête selon le cas
 
-				case "GETANNONCES": {// Choix 1 : Affichage des annonces disponibles
+				case "GETANNONCES": {// Affichage des annonces disponibles
 
 					printWrite.println(Outils.getAnnonces());// envoie les annonces sauf le dernier "|"
 
 					break;
 				} // End GETANNONCES
 
-				case "GETMYANNONCES": {// Choix 2 : Affichage des annonces disponibles
+				case "GETMYANNONCES": {// Affichage des annonces disponibles
 
 					printWrite.println(Outils.getMyAnnonces(id));
 
 					break;
 				} // End GETMYANNONCES
 
-				case "NEWANNONCE": { // Choix 3 : Ajout d'une annonce
-
-					// Outils.newAnnonce(nom, domaine, prix, descriptif);
+				case "NEWANNONCE": { // Ajout d'une annonce
 
 					try {
 						Double.parseDouble(demande[3]);
@@ -200,7 +199,7 @@ class ProcessServer extends Thread {
 					break;
 				} // End NEWANNONCE
 
-				case "UPDATEANNONCE": {// Choix 4 : Modification d'une annonce
+				case "UPDATEANNONCE": {// Modification d'une annonce
 
 					try {
 						Integer.parseInt(demande[1]);// n° int
@@ -224,7 +223,7 @@ class ProcessServer extends Thread {
 					break;
 				} // End UPDATEANNONCE
 
-				case "DELETEANNONCE": {// Choix 5 : Suppression d'une annonce
+				case "DELETEANNONCE": {// Suppression d'une annonce
 
 					try {
 						Integer.parseInt(demande[1]);// n° int
@@ -239,37 +238,28 @@ class ProcessServer extends Thread {
 					break;
 				} // End DELETEANNONCE
 
-				case "EXIT": {// Choix 6 : Quitter la conversation
+				case "INFO": {// Infos sur une annonce
 
-					printWrite.println("[SERVEUR] : Au revoir, à bientôt !");// Message de fin de communication
+					int idAnn = Integer.parseInt(demande[1]);
+					int idCl = Outils.getInfoClient(idAnn);
 
-					// Fermeture des streams
-					printWrite.close();
-					buffRead.close();
-					socketClient.close();// Fermeture de la socket cliente
-
-					break;
-				} // End EXIT
-
-				case "INFO": {
-					int idan = Integer.parseInt(demande[1]);
-					int idC = Outils.getInfoClient(idan);
 					String PORT = " ";
 					String IP = " ";
-					String idd = Integer.toString(idC);
-					boolean clientConnecte = false;
-					int i = 0;
 
-					while (i < infosClient.size()) {
-						if (infosClient.get(i).equals(idd)) {
-							PORT = infosClient.get(i - 1);
-							IP = infosClient.get(i - 2);
+					String idd = Integer.toString(idCl);
+					boolean clientConnecte = false;
+					int indexCl = 0;
+
+					while (indexCl < infosClient.size()) {
+						if (infosClient.get(indexCl).equals(idd)) {
+							PORT = infosClient.get(indexCl - 1);
+							IP = infosClient.get(indexCl - 2);
 							clientConnecte = true;
-							printWrite.println("CONFIRM/" + idan + IP + "/" + PORT);
+							printWrite.println("CONFIRM/" + idAnn + IP + "/" + PORT);
 							break;
 
 						}
-						i++;
+						indexCl++;
 					}
 
 					if (!clientConnecte) {
@@ -278,6 +268,22 @@ class ProcessServer extends Thread {
 
 					break;
 
+				}
+
+				case "EXIT": {// Quitter la conversation
+
+					printWrite.println("[SERVEUR] : Au revoir, à bientôt !");// Message de fin de communication
+
+					// Fermeture des streams
+					printWrite.close();
+					buffRead.close();
+					socketClient.close();
+
+					break;
+				} // End EXIT
+
+				default: {
+					break;
 				}
 
 				}

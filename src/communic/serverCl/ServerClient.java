@@ -1,8 +1,30 @@
-package com.serverCl;
+/*
+ * Titre du TP :		Gestionnaire d'annonces Version 2
+ * 
+ * Date : 				23/11/2019
+ * 
+ * 
+ * Nom : 				HAMOUCHE
+ * Prénom :				Nassila
+ * Numéro étudiant : 	21967736
+ * email : 				nassilahamouche@gmail.com
+ * 
+ * 
+ * Nom : 				AGHARMIOU
+ * Prénom :				Tanina
+ * Numéro étudiant : 	21961776
+ * email : 				20185597@etud.univ-evry.fr
+ *  
+ * 
+ * */
+
+package communic.serverCl;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -16,7 +38,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-public class ServeurClient extends Thread {
+/*
+ * Cette classe permet la communication entre deux ou plusieurs clients
+ * Elle contient une SeverSocket qui acceptera une connexion cliente
+ * 
+ */
+public class ServerClient extends Thread {
 
 	public JFrame frame;
 	private JTextField textField;
@@ -31,18 +58,10 @@ public class ServeurClient extends Thread {
 	 * @throws IOException
 	 */
 	public void run() {
-		/*
-		 * EventQueue.invokeLater(new Runnable() {
-		 * 
-		 * public void run() {
-		 * 
-		 * try { // ServeurClient window = new ServeurClient(Port); //
-		 * window.frame.setVisible(true); } catch (Exception e) { e.printStackTrace(); }
-		 * } });
-		 */
+
 		String message = "";
 		try {
-			serverSocket = new ServerSocket(Port);
+			serverSocket = new ServerSocket(Port);// socket serveur
 			socket = serverSocket.accept();
 			dataOut = new DataOutputStream(socket.getOutputStream());
 			dataIn = new DataInputStream(socket.getInputStream());
@@ -50,6 +69,7 @@ public class ServeurClient extends Thread {
 				message = dataIn.readUTF();
 				textArea.setText(textArea.getText().trim() + "\n" + message);
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -66,7 +86,8 @@ public class ServeurClient extends Thread {
 	static DataInputStream dataIn;
 	static DataOutputStream dataOut;
 
-	public ServeurClient(int port) {
+	@SuppressWarnings("static-access")
+	public ServerClient(int port) {
 		this.Port = port;
 		initialize();
 	}
@@ -84,6 +105,20 @@ public class ServeurClient extends Thread {
 		frame.getContentPane().add(panelsouth, BorderLayout.SOUTH);
 
 		textField = new JTextField();
+		textField.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				if (textField.getText().equals("EXIT")) {
+					try {
+						dataOut.writeUTF("ClientServeur : Aurevoir");
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					frame.dispose();
+				}
+			}
+		});
 		panelsouth.add(textField);
 		textField.setColumns(10);
 
@@ -93,8 +128,10 @@ public class ServeurClient extends Thread {
 				String messageOut = "";
 				try {
 					messageOut = textField.getText().trim();
+
 					dataOut.writeUTF("ClientServeur : " + messageOut);
 					textField.setText("");
+
 				} catch (Exception e2) {
 					// TODO: handle exception
 				}
@@ -108,7 +145,7 @@ public class ServeurClient extends Thread {
 		textArea = new JTextArea();
 		textArea.setRows(12);
 		textArea.setColumns(35);
-
+		textArea.setEditable(false);
 		scrollPane = new JScrollPane(textArea);
 		panelCenter.add(scrollPane);
 

@@ -6,19 +6,19 @@
  * 
  * 
  * Nom : 				HAMOUCHE
- * Prénom :				Nassila
- * Numéro étudiant : 	21967736
+ * PrÃ©nom :				Nassila
+ * NumÃ©ro Ã©tudiant : 	21967736
  * email : 				nassilahamouche@gmail.com
  * 
  * 
  * Nom : 				AGHARMIOU
- * Prénom :				Tanina
- * Numéro étudiant : 	21961776
+ * PrÃ©nom :				Tanina
+ * NumÃ©ro Ã©tudiant : 	21961776
  * email : 				20185597@etud.univ-evry.fr
  *  
  * 
  * */
-package communic.client;
+package com.client;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -44,7 +44,7 @@ import environnement.Outils;
 /*
  * Emetteur
  * Cette classe permet la communication entre deux ou plusieurs clients
- * Elle contient une socket cliente qui demandera la connexion à ServerClient
+ * Elle contient une socket cliente qui demandera la connexion Ã  ServerClient
  * 
  */
 public class ClientClient extends Thread {

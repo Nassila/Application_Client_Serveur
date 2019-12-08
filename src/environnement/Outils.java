@@ -1,7 +1,7 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ * Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				23/11/2019
+ * Date : 				08/12/2019
  * 
  * Nom : 				AGHARMIOU
  * Prénom :				Tanina
@@ -17,10 +17,25 @@
  * */
 package environnement;
 
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Base64;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 import connexion.Connexion;
 
@@ -131,7 +146,7 @@ public class Outils {
 				c.idNewAnnonce = resultSet.getInt(1);
 			}
 
-			c.toSend = "[SERVEUR] : CONFIRMED/";
+			c.toSend = "[SERVEUR] : CONFIRMED/annonce ajoutée";
 
 		} catch (SQLException e1) {
 			// e1.printStackTrace();
@@ -292,16 +307,16 @@ public class Outils {
 					c.name = c.resultSet.getString("nom");
 					c.prenom = c.resultSet.getString("prenom");
 					idc = c.resultSet.getInt("id");// ID client
-					c.connexionSuccess = "CONNECTED";// Connexion réussie
+					c.connexionSuccess = "CONFIRMED";// Connexion réussie
 					break;
 
 				}
 			} // End While BDD
 
-			if (c.connexionSuccess.equals("CONNECTED")) {// Si le client est connecté, la while de validité est terminée
+			if (c.connexionSuccess.equals("CONFIRMED")) {// Si le client est connecté, la while de validité est terminée
 				c.getAnn = getAnnonces();
 				c.getAnn = c.getAnn.substring(11, c.getAnn.length());
-				return (c.connexionSuccess + "/" + c.name + "," + c.prenom + "," + login + "," + passWord + "/"
+				return (c.connexionSuccess + "/" + c.name + "&" + c.prenom + "&" + login + "&" + passWord + "/"
 						+ c.getAnn + "-" + idc);
 			} else {// Sinon, le serveur attend la saisie des bon identifiants
 				return ("DENIED/Erreur dans le login ou le mot de passe !");
@@ -310,7 +325,7 @@ public class Outils {
 		} catch (SQLException e1) {
 			e1.printStackTrace();
 		}
-		return (c.connexionSuccess + "/" + c.name + "," + c.prenom + "," + login + "," + passWord + "/" + c.getAnn + "-"
+		return (c.connexionSuccess + "/" + c.name + "&" + c.prenom + "&" + login + "&" + passWord + "/" + c.getAnn + "-"
 				+ idc);
 	}
 
@@ -339,7 +354,7 @@ public class Outils {
 			c.getAnn = getAnnonces();
 			c.getAnn = c.getAnn.substring(11, c.getAnn.length());
 
-			return ("CONFIRMED" + "/" + name + "," + prenom + "," + login + "," + password + "/" + c.getAnn + "-"
+			return ("CONFIRMED" + "/" + name + "&" + prenom + "&" + login + "&" + password + "/" + c.getAnn + "-"
 					+ idc);
 
 		} catch (SQLException e1) {
@@ -349,7 +364,44 @@ public class Outils {
 
 	}
 
-	// SocketAddress
+	public static String existanceUser(String login) {
+		Config c = new Config();
+		try {
+			// Création de la connexion avec la base de données
+			c.state = Connexion.connexionBD().createStatement();
+
+			// Requête SQL
+			c.sqlRequest = "SELECT * FROM `clients`";
+
+			// Exécution de la requête SQL
+			c.resultSet = c.state.executeQuery(c.sqlRequest);
+
+			while (c.resultSet.next()) {// Parcours de la base de données
+
+				c.loginBdd = c.resultSet.getString("username"); // login client
+
+				if (c.loginBdd.equals(login)) {// Test sur le login
+
+					c.connexionSuccess = "CONFIRMED";// Connexion réussie
+					break;
+
+				}
+			} // End While BDD
+
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
+
+		if (c.connexionSuccess.equals("CONFIRMED")) {// Si le client est connecté, la while de validité est terminée
+
+			return ("DENIED/Erreur ce login est deja utilisé, veuillez choisir un autre login !");
+
+		} else {
+			return ("CONFIRMED/ok");
+		}
+
+	}
+
 	public static int getInfoClient(int idAnn) {
 		Config c = new Config();
 		int idC = 0;
@@ -383,4 +435,78 @@ public class Outils {
 
 	}
 
+	public static KeyPair genererCles(int taille) {
+		// Création d'un générateur RSA
+		KeyPairGenerator generateurCles = null;
+		try {
+			generateurCles = KeyPairGenerator.getInstance("RSA");
+			generateurCles.initialize(taille);
+		} catch (NoSuchAlgorithmException e) {
+			System.err.println("Erreur lors de l'initialisation du générateur de clés : " + e);
+			System.exit(-1);
+		}
+
+		// Génération de la paire de clés
+		KeyPair paireCles = generateurCles.generateKeyPair();
+		return paireCles;
+	}
+
+	public static String chiffrement(PublicKey key, String message) {
+		// Chiffrement du message
+		byte[] bytes = null;
+		try {
+			Cipher chiffreur = Cipher.getInstance("RSA");
+			chiffreur.init(Cipher.ENCRYPT_MODE, key);
+			bytes = chiffreur.doFinal(message.getBytes());
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException
+				| BadPaddingException e1) {
+			System.err.println("Erreur lors du chiffrement : " + e1);
+			System.exit(-1);
+		}
+		String out = Base64.getEncoder().encodeToString(bytes);
+		return out;
+	}
+
+	public static String dechiffrement(PrivateKey key, String message) {
+		// tab de byte
+		byte[] messageCode = Base64.getDecoder().decode(message);
+		// Déchiffrement du message
+		byte[] bytes = null;
+		try {
+			Cipher dechiffreur = Cipher.getInstance("RSA");
+			dechiffreur.init(Cipher.DECRYPT_MODE, key);
+			bytes = dechiffreur.doFinal(messageCode);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException
+				| BadPaddingException e) {
+			System.err.println("Erreur lors du déchiffrement : " + e);
+			System.exit(-1);
+		}
+
+		String out = new String(bytes);
+		return out;
+	}
+
+	public static String signature(PrivateKey key, String message)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+
+		byte[] messages = message.getBytes();
+		Signature signature = Signature.getInstance("SHA1withRSA");
+		signature.initSign(key, new SecureRandom());
+		signature.update(messages);
+		byte[] signatureBytes = signature.sign();
+		String sig = new String(signatureBytes);
+		return sig;
+
+	}
+
+	public static Boolean verifierSignature(PublicKey key, String message, String sig)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+
+		byte[] messages = message.getBytes();
+		byte[] sigs = message.getBytes();
+		Signature signature = Signature.getInstance("SHA1withRSA");
+		signature.initVerify(key);
+		signature.update(messages);
+		return signature.verify(sigs);
+	}
 }

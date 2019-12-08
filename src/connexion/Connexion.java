@@ -1,7 +1,8 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ *  Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				23/11/2019
+ * Date : 				08/12/2019
+ * 
  * 
  * Nom : 				AGHARMIOU
  * Prénom :				Tanina

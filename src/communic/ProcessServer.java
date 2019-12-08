@@ -1,7 +1,8 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ *  Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				23/11/2019
+ * Date : 				08/12/2019
+ * 
  * 
  * Nom : 				AGHARMIOU
  * Prénom :				Tanina
@@ -84,31 +85,36 @@ public class ProcessServer extends Thread {
 			if ((demandeConnexion[0].equals("CONNECT"))) {
 				// Etat de la connexion avec la base de données
 
-				while (!cs.equals("CONNECTED")) {// Test sur la validité des identifiants saisis
+				while (!cs.equals("CONFIRMED")) {// Test sur la validité des identifiants saisis
 
 					connexionSuccess = Outils.connect(demandeConnexion[1], demandeConnexion[2]);
+
 					cs = connexionSuccess.substring(0, 9);
 
-					if (cs.equals("CONNECTED")) {
+					if (cs.equals("CONFIRMED")) {
 						splitCnxSucs = connexionSuccess.split("-");
 						try {
 							id = Integer.parseInt(splitCnxSucs[1]);// id int
 
+							printWrite.println(splitCnxSucs[0]);
+
+							String str = buffRead.readLine();
+
+							String[] tab = str.split("/", 3);
+
+							numRandomPort = Integer.parseInt(tab[1]);
 							info = AdresseIPClient.toString().split(":");
-							numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
+
 							while (true) {
 								if (!infosClient.contains(numRandomPort)) {
-									infosClient.add(info[0]);// ajout de l'IP
+									infosClient.add(tab[2]);// ajout de la cle
+									infosClient.add(info[0].substring(1));// ajout de l'IP
 									infosClient.add("" + numRandomPort);// ajout du port
 									infosClient.add(splitCnxSucs[1]);// ajout de l'id du client
 
 									break;
-								} else {// génération d'un port aléatoire
-									numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
 								}
-
 							}
-							printWrite.println(splitCnxSucs[0] + ":" + numRandomPort);
 
 						} catch (NumberFormatException e) {
 							e.printStackTrace();
@@ -121,6 +127,22 @@ public class ProcessServer extends Thread {
 				} // End While test de validité
 
 			} else if (demandeConnexion[0].equals("NEWUSER")) {
+
+				String existUser = "";
+				String[] existeUserSplit = new String[2];
+				existeUserSplit[0] = "DENIED";
+
+				while (existeUserSplit[0].equals("DENIED")) {
+					existUser = Outils.existanceUser(demandeConnexion[3]);
+					existeUserSplit = existUser.split("/");
+					if (existeUserSplit[0].equals("DENIED")) {
+						printWrite.println(existUser);
+						demandeConnexion = buffRead.readLine().split("/");
+					} else {
+						break;
+					}
+
+				}
 
 				while (!cs.equals("CONFIRMED")) {
 
@@ -135,18 +157,21 @@ public class ProcessServer extends Thread {
 							id = Integer.parseInt(splitCnxSucs[1]);// id int
 							printWrite.println(splitCnxSucs[0]);
 							info = AdresseIPClient.toString().split(":");
+							String str = buffRead.readLine();
+
+							String[] tab = str.split("/", 3);
+
+							numRandomPort = Integer.parseInt(tab[1]);
 
 							while (true) {
 								if (!infosClient.contains(numRandomPort)) {
+									infosClient.add(tab[2]);// ajout de la cle
 									infosClient.add(info[0]);
 									infosClient.add("" + numRandomPort);
 									infosClient.add(splitCnxSucs[1]);
 
 									break;
-								} else {
-									numRandomPort = (int) (1000 + Math.random() * (4000 - 1000));
 								}
-
 							}
 
 						} catch (NumberFormatException e) {
@@ -193,7 +218,7 @@ public class ProcessServer extends Thread {
 
 					} catch (NumberFormatException e) {
 						// not a double
-						printWrite.println("Erreur dans le prix saisi !");
+						printWrite.println("DENIED/Erreur dans le prix saisi !");
 					}
 
 					break;
@@ -212,12 +237,12 @@ public class ProcessServer extends Thread {
 
 						} catch (NumberFormatException e) {
 
-							printWrite.println("Erreur dans le prix saisi !");
+							printWrite.println("DENIED/Erreur dans le prix saisi !");
 						}
 
 					} catch (NumberFormatException e) {
 						// not a double
-						printWrite.println("Erreur dans le code de l'annonce !");
+						printWrite.println("DENIED/Erreur dans le code de l'annonce !");
 					}
 
 					break;
@@ -231,7 +256,7 @@ public class ProcessServer extends Thread {
 						printWrite.println(Outils.deleteAnnonce(Integer.parseInt(demande[1]), id));
 					} catch (NumberFormatException e) {
 						// not a double
-						printWrite.println("Erreur dans le code de l'annonce !");
+						printWrite.println("DENIED/Erreur dans le code de l'annonce !");
 
 					}
 
@@ -243,19 +268,21 @@ public class ProcessServer extends Thread {
 					int idAnn = Integer.parseInt(demande[1]);
 					int idCl = Outils.getInfoClient(idAnn);
 
-					String PORT = " ";
+					int PORT = 0;
 					String IP = " ";
 
 					String idd = Integer.toString(idCl);
 					boolean clientConnecte = false;
 					int indexCl = 0;
+					String clePublique = "";
 
 					while (indexCl < infosClient.size()) {
 						if (infosClient.get(indexCl).equals(idd)) {
-							PORT = infosClient.get(indexCl - 1);
-							IP = infosClient.get(indexCl - 2);
+							clePublique = (String) infosClient.get(indexCl - 3);
+							PORT = Integer.parseInt(infosClient.get(indexCl - 1));
+							IP = (String) infosClient.get(indexCl - 2);
 							clientConnecte = true;
-							printWrite.println("CONFIRM/" + idAnn + IP + "/" + PORT);
+							printWrite.println("CONFIRMEDP2P/" + idAnn + "/" + IP + "/" + PORT + "/" + clePublique);
 							break;
 
 						}
@@ -282,7 +309,32 @@ public class ProcessServer extends Thread {
 					break;
 				} // End EXIT
 
+				case "KEY": {
+					boolean clientConnecte = false;
+					String idclient = demande[1];
+					String clePublique = null;
+					int indexCl = 0;
+					while (indexCl < infosClient.size()) {
+						if (infosClient.get(indexCl).equals(idclient)) {
+							clePublique = infosClient.get(indexCl - 3);
+							printWrite.println("CLE/" + clePublique);
+							clientConnecte = true;
+							break;
+
+						}
+						indexCl++;
+					}
+
+					if (!clientConnecte) {
+						printWrite.println("DENIED/le client n'est pas connecté");
+						break;
+					}
+
+					break;
+				}
+
 				default: {
+					printWrite.println("DENIED/cette operation n'existe pas");
 					break;
 				}
 

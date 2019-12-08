@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le :  sam. 23 nov. 2019 à 20:17
+-- Généré le :  Dim 08 déc. 2019 à 13:54
 -- Version du serveur :  5.7.26
 -- Version de PHP :  7.2.18
 
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `annonces` (
   `refCL` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_client` (`refCL`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8;
 
 --
 -- Déchargement des données de la table `annonces`
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `clients` (
   `username` varchar(20) NOT NULL,
   `password` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 
 --
 -- Déchargement des données de la table `clients`

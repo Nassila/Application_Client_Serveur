@@ -1,7 +1,8 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ *  Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				23/11/2019
+ * Date : 				08/12/2019
+ * 
  * 
  * 
  * Nom : 				HAMOUCHE
@@ -28,6 +29,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -36,7 +39,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import environnement.Outils;
+
 /*
+ * Emetteur
  * Cette classe permet la communication entre deux ou plusieurs clients
  * Elle contient une socket cliente qui demandera la connexion à ServerClient
  * 
@@ -59,6 +65,8 @@ public class ClientClient extends Thread {
 	static Socket socket;
 	static DataInputStream dataIn;
 	static DataOutputStream dataOut;
+	static PublicKey pub;
+	static PrivateKey prv;
 
 	public void run() {
 
@@ -68,10 +76,14 @@ public class ClientClient extends Thread {
 
 			dataOut = new DataOutputStream(socket.getOutputStream());
 			dataIn = new DataInputStream(socket.getInputStream());
-
-			while (!message.equals("EXIT")) {
+			String out = "";
+			while (!out.equals("EXIT")) {
 				message = dataIn.readUTF();
-				textArea.setText(textArea.getText().trim() + "\n" + message);
+
+				// dechiffremnt
+				out = Outils.dechiffrement(prv, message);
+
+				textArea.setText(textArea.getText().trim() + "\n" + out);
 			}
 
 		} catch (Exception e) {
@@ -83,7 +95,9 @@ public class ClientClient extends Thread {
 	 * Create the application.
 	 */
 	@SuppressWarnings("static-access")
-	public ClientClient(String Ip, String port) {
+	public ClientClient(String Ip, String port, PublicKey pub, PrivateKey prv) {
+		this.prv = prv;
+		this.pub = pub;
 		this.IpAdress = Ip;
 		this.Port = Integer.parseInt(port);
 		initialize();
@@ -108,7 +122,10 @@ public class ClientClient extends Thread {
 			public void keyReleased(KeyEvent e) {
 				if (textField.getText().equals("EXIT")) {
 					try {
-						dataOut.writeUTF("ClientServeur : Aurevoir");
+						String msg = "Aurevoir";
+						// Chiffrement du message
+						String out = Outils.chiffrement(pub, msg);
+						dataOut.writeUTF(out);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -128,7 +145,11 @@ public class ClientClient extends Thread {
 				try {
 					messageOut = textField.getText().trim();
 
-					dataOut.writeUTF("Client : " + messageOut);
+					// Chiffrement du message
+
+					String out = Outils.chiffrement(pub, messageOut);
+					dataOut.writeUTF(out);
+
 					textField.setText("");
 
 				} catch (Exception e2) {

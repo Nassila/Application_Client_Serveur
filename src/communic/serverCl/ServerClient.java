@@ -1,7 +1,8 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ *  Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				23/11/2019
+ * Date : 				08/12/2019
+ * 
  * 
  * 
  * Nom : 				HAMOUCHE
@@ -30,6 +31,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -38,36 +41,45 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import environnement.Outils;
+
 /*
+ * Recepteur
  * Cette classe permet la communication entre deux ou plusieurs clients
  * Elle contient une SeverSocket qui acceptera une connexion cliente
  * 
  */
 public class ServerClient extends Thread {
 
-	public JFrame frame;
-	private JTextField textField;
-	private JPanel panelCenter;
-	private JScrollPane scrollPane;
+	public static JFrame frame;
+	private static JTextField textField;
+	private static JPanel panelCenter;
+	private static JScrollPane scrollPane;
 	private static JTextArea textArea;
-	static int Port = 0;
+	ServerSocket serverSocket;
 
 	/**
 	 * Launch the application.
 	 * 
 	 * @throws IOException
 	 */
+
 	public void run() {
 
 		String message = "";
 		try {
-			serverSocket = new ServerSocket(Port);// socket serveur
+
 			socket = serverSocket.accept();
 			dataOut = new DataOutputStream(socket.getOutputStream());
 			dataIn = new DataInputStream(socket.getInputStream());
-			while (!message.equals("EXIT")) {
+			String out = "";
+			while (!out.equals("EXIT")) {
 				message = dataIn.readUTF();
-				textArea.setText(textArea.getText().trim() + "\n" + message);
+
+				// dechiffremnt
+				out = Outils.dechiffrement(prv, message);
+
+				textArea.setText(textArea.getText().trim() + "\n" + out);
 			}
 
 		} catch (Exception e) {
@@ -81,21 +93,28 @@ public class ServerClient extends Thread {
 	 * 
 	 */
 
-	static ServerSocket serverSocket;
 	static Socket socket;
 	static DataInputStream dataIn;
 	static DataOutputStream dataOut;
+	static PrivateKey prv;
+	static PublicKey pub;
 
 	@SuppressWarnings("static-access")
-	public ServerClient(int port) {
-		this.Port = port;
+	public ServerClient(PrivateKey prv, ServerSocket serverSocket) {
+		this.prv = prv;
+		this.serverSocket = serverSocket;
 		initialize();
+
+	}
+
+	public void setkeypub(PublicKey pubb) {
+		this.pub = pubb;
 	}
 
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	private static void initialize() {
 		frame = new JFrame();
 		frame.setBounds(100, 100, 450, 300);
 		frame.setTitle("Serveur Client recepteur");
@@ -110,12 +129,16 @@ public class ServerClient extends Thread {
 			public void keyReleased(KeyEvent e) {
 				if (textField.getText().equals("EXIT")) {
 					try {
-						dataOut.writeUTF("ClientServeur : Aurevoir");
+						String msg = "Aurevoir";
+						// Chiffrement du message
+						String out = Outils.chiffrement(pub, msg);
+						dataOut.writeUTF(out);
+
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					frame.dispose();
+
 				}
 			}
 		});
@@ -129,7 +152,10 @@ public class ServerClient extends Thread {
 				try {
 					messageOut = textField.getText().trim();
 
-					dataOut.writeUTF("ClientServeur : " + messageOut);
+					// Chiffrement du message
+					String out = Outils.chiffrement(pub, messageOut);
+
+					dataOut.writeUTF(out);
 					textField.setText("");
 
 				} catch (Exception e2) {

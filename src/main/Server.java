@@ -1,7 +1,8 @@
 /*
- * Titre du TP :		Gestionnaire d'annonces Version 2
+ *  Titre du TP :		Gestionnaire d'annonces Version securisé
  * 
- * Date : 				31/10/2019
+ * Date : 				08/12/2019
+ * 
  * 
  * Nom : 				HAMOUCHE
  * Prénom :				Nassila
@@ -24,7 +25,8 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import communic.*;
+
+import communic.ProcessServer;
 
 /*
  * Classe Server qui est notre gestionnaire d'annonces

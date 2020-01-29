@@ -3,8 +3,8 @@
 A l’inverse, si le joueur rencontre un bloc de type glace et qu’il s’y frotte alors il glisse et avance de deux cases en faisant uniquement un déplacement.
 
 Cette extension peut se faire en ajoutant :
-    -   Deux classes qui hériteront de la classe Bloc, une classe BlocGlass et une classe BlocBoue.
-    -   Un trait qui sera appliquer à la classe Jeu et qui consiste à modifier la méthode deplacer_joueur() en lui ajoutant une condition pour connaitre le type du bloc sur lequel le joueur se trouve et définissant ainsi le nombre de deplacements et de cases que ce joueur devra faire.
+    * Deux classes qui hériteront de la classe Bloc, une classe BlocGlass et une classe BlocBoue.
+    * Un trait qui sera appliquer à la classe Jeu et qui consiste à modifier la méthode deplacer_joueur() en lui ajoutant une condition pour connaitre le type du bloc sur lequel le joueur se trouve et définissant ainsi le nombre de deplacements et de cases que ce joueur devra faire.
 
   2-  Extention par pleuging : 
   
